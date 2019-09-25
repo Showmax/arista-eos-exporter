@@ -1,0 +1,6 @@
+requests
+prometheus-client
+falcon
+PyYAML
+argparse
+pyeapi
