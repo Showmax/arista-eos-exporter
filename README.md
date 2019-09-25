@@ -16,7 +16,7 @@ curl http://localhost:9200/arista?target=myswitch.local&modules=tcam,port_stats
 
 The optional parameter `modules` can have these values at the moment:
  * `memory` memory statistics
- * 'tcam' information about tcam usage
+ * `tcam` information about tcam usage
  * `port` information about ports - input/output packets, bytes, errors, multicasts, etc
  * `sfp` information about SFP modules - transmit/receive power, alerts over thresholds, etc
  * `bgp` information about BGP peers, how many routes they advertise, their status
