@@ -58,7 +58,7 @@ def main():
     if config['disable_certificate_validation'] != True:
         logging.error(('Certificate validation is not supported by pyeapi'
                        'library. Please specify '
-                       'disable_certificate_validation=false in your '
+                       'disable_certificate_validation: true in your '
                        'configuration file. Upstream issue: '
                        'https://github.com/arista-eosplus/pyeapi/issues/174'))
         return 1
