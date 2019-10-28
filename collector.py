@@ -211,19 +211,35 @@ class AristaMetricsCollector(object):
                           'sensor',
                           'mediaType',
                           'serial',
-                          'description']
+                          'description',
+                          'lane']
             sfp_stats_metrics = GaugeMetricFamily('arista_sfp_stats',
                                                   'SFP Statistics',
                                                   labels=sfp_labels)
-            alarm_labels = ['device', 'sensor', 'alarmType']
+            alarm_labels = ['device', 'lane', 'sensor', 'alarmType']
             sfp_alarms = GaugeMetricFamily('arista_sfp_alarms',
                                            'SFP Alarms',
                                            labels=alarm_labels)
-            for interface, data in sfp['result'][0]['interfaces'].items():
+            for iface, data in sfp['result'][0]['interfaces'].items():
+                interface = iface
+                lane = iface
                 if not data:
                     logging.debug(f'Port does not have SFP: {interface}')
                     continue
                 description = ''
+                # Lane detection. Lane is an optical transmitter that is
+                # a part of an interface. For example, 100G interface
+                # is usually comprised of four 25G lanes or ten 10G lanes.
+                if iface not in self._interfaces:
+                    logging.debug((f'Port {interface} not found in interfaces'
+                                   '. Looking for a lane'))
+                    try_iface = '/'.join(interface.split('/')[0:-1]) + '/1'
+                    sfps = sfp['result'][0]['interfaces']
+                    if sfps[iface]['vendorSn'] == sfps[try_iface]['vendorSn']:
+                        lane = iface
+                        interface = try_iface
+                        logging.debug((f'Setting lane {lane} as '
+                                       'part of {interface}'))
                 try:
                     description = self._interfaces[interface]['description']
                 except KeyError:
@@ -233,7 +249,8 @@ class AristaMetricsCollector(object):
                               sensor,
                               data['mediaType'],
                               data['vendorSn'],
-                              description]
+                              description,
+                              lane]
                     logging.debug((f'Adding: interface={interface} '
                                    f'sensor={sensor} value={data[sensor]} '
                                    f'labels={labels}'))
@@ -241,7 +258,7 @@ class AristaMetricsCollector(object):
                                                  labels=labels)
                     # check thresholds and generate alerts
                     thresholds = data['details'][sensor]
-                    labels = [interface, sensor]
+                    labels = [interface, lane, sensor]
                     if data[sensor] > thresholds['highAlarm']:
                         labels.append('highAlarm')
                         sfp_alarms.add_metric(labels=labels,

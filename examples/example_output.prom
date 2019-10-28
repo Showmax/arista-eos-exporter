@@ -796,17 +796,25 @@ arista_l2_up{description="",device="Ethernet27"} 0.0
 arista_l2_up{description="",device="Ethernet26"} 0.0
 # HELP arista_sfp_stats SFP Statistics
 # TYPE arista_sfp_stats gauge
-arista_sfp_stats{description="",device="Ethernet6",mediaType="10GBASE-SR",sensor="rxPower",serial="FNS20530LL6"} -2.53132372149571
-arista_sfp_stats{description="",device="Ethernet6",mediaType="10GBASE-SR",sensor="txBias",serial="FNS20530LL6"} 8.356
-arista_sfp_stats{description="",device="Ethernet6",mediaType="10GBASE-SR",sensor="txPower",serial="FNS20530LL6"} -2.2192113806254525
-arista_sfp_stats{description="",device="Ethernet6",mediaType="10GBASE-SR",sensor="voltage",serial="FNS20530LL6"} 3.347
-arista_sfp_stats{description="test",device="Ethernet5",mediaType="10GBASE-SR",sensor="rxPower",serial="FNS20530P5K"} -30.0
-arista_sfp_stats{description="test",device="Ethernet5",mediaType="10GBASE-SR",sensor="txBias",serial="FNS20530P5K"} 8.370000000000001
-arista_sfp_stats{description="test",device="Ethernet5",mediaType="10GBASE-SR",sensor="txPower",serial="FNS20530P5K"} -2.2687207596666497
-arista_sfp_stats{description="test",device="Ethernet5",mediaType="10GBASE-SR",sensor="voltage",serial="FNS20530P5K"} 3.3353
+arista_sfp_stats{description="NAP100G",device="Ethernet51/1",lane="Ethernet51/2",mediaType="100GBASE-LR4",sensor="rxPower",serial="ACW17260014M"} 1.0335893986656295
+arista_sfp_stats{description="NAP100G",device="Ethernet51/1",lane="Ethernet51/2",mediaType="100GBASE-LR4",sensor="txBias",serial="ACW17260014M"} 25.012
+arista_sfp_stats{description="NAP100G",device="Ethernet51/1",lane="Ethernet51/2",mediaType="100GBASE-LR4",sensor="txPower",serial="ACW17260014M"} 1.2936759572298548
+arista_sfp_stats{description="NAP100G",device="Ethernet51/1",lane="Ethernet51/2",mediaType="100GBASE-LR4",sensor="voltage",serial="ACW17260014M"} 3.3477
+arista_sfp_stats{description="NAP100G",device="Ethernet51/1",lane="Ethernet51/1",mediaType="100GBASE-LR4",sensor="rxPower",serial="ACW17260014M"} 1.371958119405484
+arista_sfp_stats{description="NAP100G",device="Ethernet51/1",lane="Ethernet51/1",mediaType="100GBASE-LR4",sensor="txBias",serial="ACW17260014M"} 25.012
+arista_sfp_stats{description="NAP100G",device="Ethernet51/1",lane="Ethernet51/1",mediaType="100GBASE-LR4",sensor="txPower",serial="ACW17260014M"} 1.6616359374783407
+arista_sfp_stats{description="NAP100G",device="Ethernet51/1",lane="Ethernet51/1",mediaType="100GBASE-LR4",sensor="voltage",serial="ACW17260014M"} 3.3477
+arista_sfp_stats{description="",device="Ethernet6",lane="Ethernet6",mediaType="10GBASE-SR",sensor="rxPower",serial="FNS20530LL6"} -2.53132372149571
+arista_sfp_stats{description="",device="Ethernet6",lane="Ethernet6",mediaType="10GBASE-SR",sensor="txBias",serial="FNS20530LL6"} 8.356
+arista_sfp_stats{description="",device="Ethernet6",lane="Ethernet6",mediaType="10GBASE-SR",sensor="txPower",serial="FNS20530LL6"} -2.2192113806254525
+arista_sfp_stats{description="",device="Ethernet6",lane="Ethernet6",mediaType="10GBASE-SR",sensor="voltage",serial="FNS20530LL6"} 3.347
+arista_sfp_stats{description="test",device="Ethernet5",lane="Ethernet5",mediaType="10GBASE-SR",sensor="rxPower",serial="FNS20530P5K"} -30.0
+arista_sfp_stats{description="test",device="Ethernet5",lane="Ethernet5",mediaType="10GBASE-SR",sensor="txBias",serial="FNS20530P5K"} 8.370000000000001
+arista_sfp_stats{description="test",device="Ethernet5",lane="Ethernet5",mediaType="10GBASE-SR",sensor="txPower",serial="FNS20530P5K"} -2.2687207596666497
+arista_sfp_stats{description="test",device="Ethernet5",lane="Ethernet5",mediaType="10GBASE-SR",sensor="voltage",serial="FNS20530P5K"} 3.3353
 # HELP arista_sfp_alarms SFP Alarms
 # TYPE arista_sfp_alarms gauge
-arista_sfp_alarms{alarmType="lowAlarm",device="Ethernet5",sensor="rxPower"} -30.0
+arista_sfp_alarms{alarmType="lowAlarm",device="Ethernet5",lane="Ethernet5",sensor="rxPower"} -30.0
 # HELP arista_bgp_peer_state_info State of the BGP peer
 # TYPE arista_bgp_peer_state_info gauge
 arista_bgp_peer_state_info{asn="327880",peer="10.0.3.2",router_id="169.255.195.254",state="Established",vrf="default"} 1.0

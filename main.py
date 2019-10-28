@@ -55,7 +55,7 @@ def main():
 
     if 'disable_certificate_validation' not in config:
         config['disable_certificate_validation'] = False
-    if config['disable_certificate_validation'] != True:
+    if config['disable_certificate_validation'] is not True:
         logging.error(('Certificate validation is not supported by pyeapi'
                        'library. Please specify '
                        'disable_certificate_validation: true in your '
