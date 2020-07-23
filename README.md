@@ -11,7 +11,7 @@ The hostname of the switch has to be passed as **target parameter** in the http 
 if you are logged in to the POD running the exporter you can call
 
 ```
-curl http://localhost:9200/arista?target=myswitch.local&modules=tcam,port_stats
+curl http://localhost:9200/arista?target=myswitch.local&modules=tcam,port
 ```
 
 The optional parameter `modules` can have these values at the moment:
@@ -54,6 +54,26 @@ loglevel: <INFO|DEBUG>
 timeout: 20
 disable_certificate_validation: true
 ```
+
+### Example of Prometheus configuration
+```yaml
+- job_name: 'arista'
+  static_configs:
+    - targets:
+      - switch1.example.com
+      - switch2.example.com
+  metrics_path: /arista
+  params:
+    modules: [tcam,port]
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: arista-exporter.example.com:9200
+```
+This configuration uses relabeling to get `targets` as parameters for exporter running at arista-exporter.example.com:9200. Thanks to this, you can use any service discovery mechanism you want - just exchange static_configs with your desired SD system and adjust relabeling accordingly.
 
 ### Example exporter output
 Look in the examples/ folder.
