@@ -794,6 +794,57 @@ arista_l2_up{description="",device="Ethernet25"} 0.0
 arista_l2_up{description="",device="Ethernet54/1"} 0.0
 arista_l2_up{description="",device="Ethernet27"} 0.0
 arista_l2_up{description="",device="Ethernet26"} 0.0
+# HELP arista_port_bandwidth Bandwidth in bits/s
+# TYPE arista_port_bandwidth gauge
+arista_port_bandwidth{description="",device="Ethernet8"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet9"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet2"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet3"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet1"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet6"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet7"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet4"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet5"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet52/1"} 1e+011
+arista_port_bandwidth{description="",device="Ethernet53/1"} 1e+011
+arista_port_bandwidth{description="",device="Ethernet22"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet50/1"} 1e+011
+arista_port_bandwidth{description="",device="Port-Channel10"} 2e+011
+arista_port_bandwidth{description="",device="Ethernet51/1"} 1e+011
+arista_port_bandwidth{description="",device="Port-Channel12"} 2e+010
+arista_port_bandwidth{description="",device="Port-Channel13"} 2e+010
+arista_port_bandwidth{description="",device="Ethernet38"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet39"} 1e+010
+arista_port_bandwidth{description="",device="Port-Channel16"} 2e+010
+arista_port_bandwidth{description="",device="Port-Channel17"} 2e+010
+arista_port_bandwidth{description="",device="Port-Channel14"} 2e+010
+arista_port_bandwidth{description="",device="Port-Channel15"} 2e+010
+arista_port_bandwidth{description="",device="Ethernet32"} 1e+09
+arista_port_bandwidth{description="",device="Ethernet33"} 1e+09
+arista_port_bandwidth{description="",device="Ethernet30"} 1e+09
+arista_port_bandwidth{description="",device="Port-Channel19"} 2e+010
+arista_port_bandwidth{description="",device="Ethernet36"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet37"} 1e+09
+arista_port_bandwidth{description="",device="Port-Channel50"} 2e+010
+arista_port_bandwidth{description="",device="Ethernet35"} 1e+09
+arista_port_bandwidth{description="",device="Ethernet24"} 1e+010
+arista_port_bandwidth{description="",device="Port-Channel18"} 2e+010
+arista_port_bandwidth{description="",device="Ethernet31"} 1e+09
+arista_port_bandwidth{description="",device="Ethernet10"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet54/1"} 1e+011
+arista_port_bandwidth{description="",device="Ethernet46"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet29"} 1e+09
+arista_port_bandwidth{description="",device="Ethernet47"} 1e+09
+arista_port_bandwidth{description="",device="Ethernet34"} 1e+010
+arista_port_bandwidth{description="",device="Port-Channel22"} 2e+09
+arista_port_bandwidth{description="",device="Ethernet21"} 1e+010
+arista_port_bandwidth{description="",device="Ethernet23"} 1e+010
+arista_port_bandwidth{description="",device="Port-Channel51"} 2e+09
+arista_port_bandwidth{description="",device="Ethernet25"} 1e+09
+arista_port_bandwidth{description="",device="Port-Channel21"} 2e+010
+arista_port_bandwidth{description="",device="Ethernet27"} 1e+09
+arista_port_bandwidth{description="",device="Ethernet26"} 1e+09
+arista_port_bandwidth{description="",device="Ethernet44"} 1e+010
 # HELP arista_sfp_stats SFP Statistics
 # TYPE arista_sfp_stats gauge
 arista_sfp_stats{description="NAP100G",device="Ethernet51/1",lane="Ethernet51/2",mediaType="100GBASE-LR4",sensor="rxPower",serial="ACW17260014M"} 1.0335893986656295
