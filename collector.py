@@ -158,6 +158,9 @@ class AristaMetricsCollector(object):
         port_l2_up = GaugeMetricFamily('arista_l2_up',
                                        'Value 1 if port is connected',
                                        labels=['device', 'description'])
+        port_bandwidth = GaugeMetricFamily('arista_port_bandwidth',
+                                           'Bandwidth in bits/s',
+                                           labels=['device', 'description'])
 
         if port_interfaces:
             self._interfaces = port_interfaces['result'][0]['interfaces']
@@ -187,7 +190,9 @@ class AristaMetricsCollector(object):
                     port_l2_up.add_metric(labels=[iface['name'],
                                                   iface['description']],
                                           value=0)
-
+                port_bandwidth.add_metric(labels=[iface['name'],
+                                                  iface['description']],
+                                          value=int(iface['bandwidth']))
                 for port_stat in PORT_STATS_NAMES:
                     metric = [interface,
                               iface['description'],
@@ -200,6 +205,7 @@ class AristaMetricsCollector(object):
             yield from port_stats.values()
             yield port_admin_up
             yield port_l2_up
+            yield port_bandwidth
 
     def collect_sfp(self):
         command = 'show interfaces transceiver detail'
