@@ -47,7 +47,7 @@ class metricHandler:
             resp.body = msg
 
         try:
-            socket.gethostbyname(self._target)
+            socket.getaddrinfo(self._target, None)
         except socket.gaierror as e:
             msg = f'Target does not exist in DNS: {e}'
             logging.error(msg)
