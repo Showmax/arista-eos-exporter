@@ -13,7 +13,7 @@ from wsgiref import simple_server
 
 def falcon_app(config, logger, port=9200, addr='0.0.0.0'):
     logger.info(f'Starting Arista eAPI exporter on Port {addr}:{port}')
-    api = falcon.API()
+    api = falcon.App()
     api.add_route(
         '/arista',
         metricHandler(config=config)

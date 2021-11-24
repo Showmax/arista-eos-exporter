@@ -1,6 +1,6 @@
 requests
 prometheus-client
-falcon
+falcon >=3
 PyYAML
 argparse
 pyeapi
