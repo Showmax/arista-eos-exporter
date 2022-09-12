@@ -8,4 +8,5 @@ setup(
     author='Stefan Safar',
     author_email='stefan.safar@showmax.com',
     scripts=['main.py', 'handler.py', 'collector.py'],
+    py_modules=[],
 )
