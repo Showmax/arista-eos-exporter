@@ -880,10 +880,10 @@ arista_bgp_accepted_prefixes{asn="327880",peer="10.0.1.2",vrf="default"} 1.0
 arista_bgp_accepted_prefixes{asn="327850",peer="196.60.8.254",vrf="default"} 0.0
 arista_bgp_accepted_prefixes{asn="65000",peer="2c0f:f448::12",vrf="default"} 4.0
 arista_bgp_accepted_prefixes{asn="37186",peer="2001:43f8:6d0::1",vrf="default"} 0.0
-# HELP arista_power_supply_info_info State of the power supply
-# TYPE arista_power_supply_info_info gauge
-arista_power_supply_info_info{capacity_watts="500.0",id="1",model="PWR-500AC-F",state="ok"} 1.0
-arista_power_supply_info_info{capacity_watts="500.0",id="2",model="PWR-500AC-F",state="powerLoss"} 1.0
+# HELP arista_power_supply_info State of the power supply
+# TYPE arista_power_supply_info gauge
+arista_power_supply_info{capacity_watts="500.0",id="1",model="PWR-500AC-F",state="ok"} 1.0
+arista_power_supply_info{capacity_watts="500.0",id="2",model="PWR-500AC-F",state="powerLoss"} 1.0
 # HELP arista_power_supply_power Power supply power measurements
 # TYPE arista_power_supply_power gauge
 arista_power_supply_power{id="1",measurement="inputCurrent"} 0.630859375

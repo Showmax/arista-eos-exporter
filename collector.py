@@ -333,7 +333,7 @@ class AristaMetricsCollector(object):
         yield prefixes
 
     def collect_power(self):
-        psu_info = InfoMetricFamily('arista_power_supply_info',
+        psu_info = InfoMetricFamily('arista_power_supply',
                                     'State of the power supply',
                                     labels=['id', 'state', 'model', 'capacity_watts'])
         psu_power = GaugeMetricFamily('arista_power_supply_power',
