@@ -880,3 +880,36 @@ arista_bgp_accepted_prefixes{asn="327880",peer="10.0.1.2",vrf="default"} 1.0
 arista_bgp_accepted_prefixes{asn="327850",peer="196.60.8.254",vrf="default"} 0.0
 arista_bgp_accepted_prefixes{asn="65000",peer="2c0f:f448::12",vrf="default"} 4.0
 arista_bgp_accepted_prefixes{asn="37186",peer="2001:43f8:6d0::1",vrf="default"} 0.0
+# HELP arista_power_supply_info_info State of the power supply
+# TYPE arista_power_supply_info_info gauge
+arista_power_supply_info_info{capacity_watts="500.0",id="1",model="PWR-500AC-F",state="ok"} 1.0
+arista_power_supply_info_info{capacity_watts="500.0",id="2",model="PWR-500AC-F",state="powerLoss"} 1.0
+# HELP arista_power_supply_power Power supply power measurements
+# TYPE arista_power_supply_power gauge
+arista_power_supply_power{id="1",measurement="inputCurrent"} 0.630859375
+arista_power_supply_power{id="1",measurement="inputVoltage"} 227.75
+arista_power_supply_power{id="1",measurement="outputCurrent"} 10.21875
+arista_power_supply_power{id="1",measurement="outputPower"} 122.75
+arista_power_supply_power{id="2",measurement="inputCurrent"} 0.0
+arista_power_supply_power{id="2",measurement="inputVoltage"} 0.0
+arista_power_supply_power{id="2",measurement="outputCurrent"} 0.0
+arista_power_supply_power{id="2",measurement="outputPower"} 0.0
+# HELP arista_power_supply_temperature Power supply temperature sensors
+# TYPE arista_power_supply_temperature gauge
+arista_power_supply_temperature{id="1",sensor="TempSensorP1/2",status="ok"} 25.0
+arista_power_supply_temperature{id="1",sensor="TempSensorP1/1",status="ok"} 33.0
+arista_power_supply_temperature{id="2",sensor="TempSensorP2/1",status="ok"} 0.0
+arista_power_supply_temperature{id="2",sensor="TempSensorP2/2",status="ok"} 0.0
+# HELP arista_power_supply_fan Power supply fan sensors
+# TYPE arista_power_supply_fan gauge
+arista_power_supply_fan{id="1",sensor="FanP1/1",status="ok"} 33.0
+arista_power_supply_fan{id="2",sensor="FanP2/1",status="ok"} 33.0
+# HELP arista_scrape_duration_seconds Duration of a collector scrape.
+# TYPE arista_scrape_duration_seconds gauge
+arista_scrape_duration_seconds{collector="base"} 0.22736549377441406
+arista_scrape_duration_seconds{collector="memory"} 1.6927719116210938e-05
+arista_scrape_duration_seconds{collector="tcam"} 0.07282376289367676
+arista_scrape_duration_seconds{collector="port"} 1.2074079513549805
+arista_scrape_duration_seconds{collector="sfp"} 0.19526982307434082
+arista_scrape_duration_seconds{collector="bgp"} 0.5865275859832764
+arista_scrape_duration_seconds{collector="power"} 0.036830902099609375
