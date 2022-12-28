@@ -20,6 +20,7 @@ The optional parameter `modules` can have these values at the moment:
  * `port` information about ports - input/output packets, bytes, errors, multicasts, etc
  * `sfp` information about SFP modules - transmit/receive power, alerts over thresholds, etc
  * `bgp` information about BGP peers, how many routes they advertise, their status
+ * `power` information about PSU (power supply units) - status, model, capacity, fans, power, temperature
  * `all` all of the above. This is the default.
 
 ## Prerequisites and Installation

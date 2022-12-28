@@ -332,12 +332,51 @@ class AristaMetricsCollector(object):
         yield peer_state
         yield prefixes
 
+    def collect_power(self):
+        psu_info = InfoMetricFamily('arista_power_supply_info',
+                                    'State of the power supply',
+                                    labels=['id', 'state', 'model', 'capacity_watts'])
+        psu_power = GaugeMetricFamily('arista_power_supply_power',
+                                      'Power supply power measurements',
+                                      labels=['id', 'measurement'])
+        psu_temp = GaugeMetricFamily('arista_power_supply_temperature',
+                                     'Power supply temperature sensors',
+                                      labels = ['id', 'status', 'sensor'])
+        psu_fan = GaugeMetricFamily('arista_power_supply_fan',
+                                     'Power supply fan speed sensors',
+                                      labels = ['id', 'status', 'sensor'])
+
+        measurements = ['inputCurrent', 'inputVoltage', 'outputCurrent', 'outputPower']
+        command = 'show environment power'
+        data = self.switch_command(command)
+        for psu_id, psu in data['result'][0]['powerSupplies'].items():
+            labels = {'state': psu['state'],
+                      'model': psu['modelName'],
+                      'capacity_watts': str(psu['capacity']),
+                      'id': str(psu_id)}
+            psu_info.add_metric(value=labels, labels=labels)
+            for measurement in measurements:
+                labels = [psu_id, measurement]
+                psu_power.add_metric(value=psu[measurement], labels=labels)
+            for name, sensor_data in psu['tempSensors'].items():
+                labels = [psu_id, sensor_data['status'], name]
+                psu_temp.add_metric(value=sensor_data['temperature'], labels=labels)
+            for name, fan_data in psu['fans'].items():
+                labels = [psu_id, fan_data['status'], name]
+                psu_fan.add_metric(value=fan_data['speed'], labels=labels)
+
+        yield psu_info
+        yield psu_power
+        yield psu_temp
+        yield psu_fan
+
     def get_all_modules(self):
         return {'memory': self.collect_memory,
                 'tcam': self.collect_tcam,
                 'port': self.collect_port,
                 'sfp': self.collect_sfp,
                 'bgp': self.collect_bgp,
+                'power': self.collect_power,
                 }
 
     def get_modules(self):
@@ -358,6 +397,8 @@ class AristaMetricsCollector(object):
                 module_functions['sfp'] = self.collect_sfp
             elif module == 'bgp':
                 module_functions['bgp'] = self.collect_bgp
+            elif module == 'power':
+                module_functions['power'] = self.collect_power
             else:
                 logging.warning(f'Unknown module requested:{module}. Ignoring')
         return module_functions
