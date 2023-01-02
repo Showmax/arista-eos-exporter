@@ -381,7 +381,7 @@ class AristaMetricsCollector(object):
             labels=["id", "status", "sensor"],
         )
         psu_fan = GaugeMetricFamily(
-            "arista_power_supply_fan",
+            "arista_power_supply_fan_speed_percent",
             "Power supply fan speed sensors",
             labels=["id", "status", "sensor"],
         )

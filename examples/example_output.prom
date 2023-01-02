@@ -900,10 +900,10 @@ arista_power_supply_temperature{id="1",sensor="TempSensorP1/2",status="ok"} 25.0
 arista_power_supply_temperature{id="1",sensor="TempSensorP1/1",status="ok"} 33.0
 arista_power_supply_temperature{id="2",sensor="TempSensorP2/1",status="ok"} 0.0
 arista_power_supply_temperature{id="2",sensor="TempSensorP2/2",status="ok"} 0.0
-# HELP arista_power_supply_fan Power supply fan sensors
-# TYPE arista_power_supply_fan gauge
-arista_power_supply_fan{id="1",sensor="FanP1/1",status="ok"} 33.0
-arista_power_supply_fan{id="2",sensor="FanP2/1",status="ok"} 33.0
+# HELP arista_power_supply_fan_speed_percent Power supply fan sensors
+# TYPE arista_power_supply_fan_speed_percent gauge
+arista_power_supply_fan_speed_percent{id="1",sensor="FanP1/1",status="ok"} 33.0
+arista_power_supply_fan_speed_percent{id="2",sensor="FanP2/1",status="ok"} 33.0
 # HELP arista_scrape_duration_seconds Duration of a collector scrape.
 # TYPE arista_scrape_duration_seconds gauge
 arista_scrape_duration_seconds{collector="base"} 0.22736549377441406
