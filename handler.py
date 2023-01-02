@@ -19,29 +19,29 @@ class metricHandler:
         if not modules:
             return False
         module_functions = []
-        modules = modules.split(',')
+        modules = modules.split(",")
         for module in modules:
-            if module == 'all':
+            if module == "all":
                 return False
-            elif module == 'memory':
+            elif module == "memory":
                 module.functions
 
     def on_get(self, req, resp):
-        self._target = req.get_param('target')
-        modules = req.get_param('modules')
+        self._target = req.get_param("target")
+        modules = req.get_param("modules")
         if modules:
             if re.match(r"^([a-zA-Z]+)(,[a-zA-Z]+)*$", modules):
-                self._config['module_names'] = modules
+                self._config["module_names"] = modules
             else:
-                msg = 'Invalid modules specified'
+                msg = "Invalid modules specified"
                 logging.error(msg)
                 resp.status = falcon.HTTP_400
                 resp.body = msg
                 return
 
-        resp.set_header('Content-Type', CONTENT_TYPE_LATEST)
+        resp.set_header("Content-Type", CONTENT_TYPE_LATEST)
         if not self._target:
-            msg = 'No target parameter provided!'
+            msg = "No target parameter provided!"
             logging.error(msg)
             resp.status = falcon.HTTP_400
             resp.body = msg
@@ -49,16 +49,13 @@ class metricHandler:
         try:
             socket.getaddrinfo(self._target, None)
         except socket.gaierror as e:
-            msg = f'Target does not exist in DNS: {e}'
+            msg = f"Target does not exist in DNS: {e}"
             logging.error(msg)
             resp.status = falcon.HTTP_400
             resp.body = msg
 
         else:
-            registry = AristaMetricsCollector(
-                self._config,
-                target=self._target
-                )
+            registry = AristaMetricsCollector(self._config, target=self._target)
 
             collected_metric = generate_latest(registry)
             resp.body = collected_metric
