@@ -426,11 +426,11 @@ class AristaMetricsCollector(object):
         }
 
     def get_modules(self):
+        all_modules = self.get_all_modules()
         if not self._module_names:
-            return self.get_all_modules()
+            return all_modules
         module_functions = {}
         modules = self._module_names.split(",")
-        all_modules = self.get_all_modules()
         for module in modules:
             if module == "all":
                 return all_modules
