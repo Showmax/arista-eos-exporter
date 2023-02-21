@@ -62,6 +62,8 @@ class AristaMetricsCollector(object):
                 password=self._password,
                 timeout=self._timeout,
             )
+            # workaround to allow sslv3 ciphers for python =>3.10
+            self._connection.transport._context.set_ciphers('DEFAULT')
         return self._connection
 
     def switch_command(self, command):
