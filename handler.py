@@ -13,7 +13,7 @@ from prometheus_client.exposition import generate_latest
 class metricHandler:
     def __init__(self, config):
         self._config = config
-        self._target = None
+        self._targets = None
 
     def handle_modules(self, modules):
         if not modules:
@@ -27,7 +27,9 @@ class metricHandler:
                 module.functions
 
     def on_get(self, req, resp):
-        self._target = req.get_param("target")
+        target_names = req.get_param("target")
+        if target_names:
+            self._targets = target_names.split(",")
         modules = req.get_param("modules")
         if modules:
             if re.match(r"^([a-zA-Z]+)(,[a-zA-Z]+)*$", modules):
@@ -36,26 +38,39 @@ class metricHandler:
                 msg = "Invalid modules specified"
                 logging.error(msg)
                 resp.status = falcon.HTTP_400
-                resp.body = msg
+                resp.text = msg
                 return
+        else:
+            msg = "No modules specified"
+            logging.error(msg)
+            resp.status = falcon.HTTP_400
+            resp.text = msg
+            return
 
         resp.set_header("Content-Type", CONTENT_TYPE_LATEST)
-        if not self._target:
+
+        if self._targets and self._targets[0] == "all":
+           if 'targets' in self._config:
+               self._targets = self._config['targets']
+
+        if not self._targets:
             msg = "No target parameter provided!"
             logging.error(msg)
             resp.status = falcon.HTTP_400
-            resp.body = msg
-
-        try:
-            socket.getaddrinfo(self._target, None)
-        except socket.gaierror as e:
-            msg = f"Target does not exist in DNS: {e}"
-            logging.error(msg)
-            resp.status = falcon.HTTP_400
-            resp.body = msg
+            resp.text = msg
 
         else:
-            registry = AristaMetricsCollector(self._config, target=self._target)
+            for target in self._targets:
+                try:
+                    socket.getaddrinfo(target, None)
+                except socket.gaierror as e:
+                    msg = f"Target '{target}' does not exist in DNS: {e}"
+                    logging.error(msg)
+                    resp.status = falcon.HTTP_400
+                    resp.text = msg
+
+        if not resp.text:
+            registry = AristaMetricsCollector(self._config, targets=self._targets)
 
             collected_metric = generate_latest(registry)
-            resp.body = collected_metric
+            resp.text = collected_metric

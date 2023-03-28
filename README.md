@@ -14,6 +14,8 @@ if you are logged in to the POD running the exporter you can call
 curl http://localhost:9200/arista?target=myswitch.local&modules=tcam,port
 ```
 
+The mandatory parameter `target` can be the fqdns of one or more switches, or `all`. In the latter case all targets listed in the config file (see below) will be queried.
+
 The optional parameter `modules` can have these values at the moment:
  * `memory` memory statistics
  * `tcam` information about tcam usage
@@ -45,6 +47,8 @@ pip3 install -r requirements.txt
 
 * The **disable_certificate_validation: true** needs to be currently set. See the Caveats section for more details.
 
+* The **targets** specifies a list of switches that will be queried when calling the exporter with `target=all`.
+
 ### Example of a config file
 
 ```text
@@ -54,6 +58,9 @@ password: <your password>
 loglevel: <INFO|DEBUG>
 timeout: 20
 disable_certificate_validation: true
+targets:
+  - myswitch.local
+  - myotherswitch.local
 ```
 
 ### Example of Prometheus configuration
