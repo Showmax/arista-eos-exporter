@@ -405,9 +405,9 @@ class AristaMetricsCollector(object):
             if target.switch_up() == 0:
                 continue
             start = time.time()
-            data = target.switch_command("show ip bgp summary")
+            data = target.switch_command("show ip bgp summary vrf all")
             ipv4 = data["result"][0]["vrfs"]
-            data = target.switch_command("show ipv6 bgp summary")
+            data = target.switch_command("show ipv6 bgp summary vrf all")
             ipv6 = data["result"][0]["vrfs"]
 
             for vrf, vrf_data in ipv4.items():
