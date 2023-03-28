@@ -38,13 +38,13 @@ class metricHandler:
                 msg = "Invalid modules specified"
                 logging.error(msg)
                 resp.status = falcon.HTTP_400
-                resp.body = msg
+                resp.text = msg
                 return
         else:
             msg = "No modules specified"
             logging.error(msg)
             resp.status = falcon.HTTP_400
-            resp.body = msg
+            resp.text = msg
             return
 
         resp.set_header("Content-Type", CONTENT_TYPE_LATEST)
@@ -57,7 +57,7 @@ class metricHandler:
             msg = "No target parameter provided!"
             logging.error(msg)
             resp.status = falcon.HTTP_400
-            resp.body = msg
+            resp.text = msg
 
         else:
             for target in self._targets:
@@ -67,7 +67,7 @@ class metricHandler:
                     msg = f"Target '{target}' does not exist in DNS: {e}"
                     logging.error(msg)
                     resp.status = falcon.HTTP_400
-                    resp.body = msg
+                    resp.text = msg
 
         if not resp.text:
             registry = AristaMetricsCollector(self._config, targets=self._targets)
