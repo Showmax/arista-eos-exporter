@@ -318,7 +318,7 @@ class AristaMetricsCollector(object):
             yield sfp_alarms
 
     def collect_bgp(self):
-        data = self.switch_command("show ip bgp summary")
+        data = self.switch_command("show ip bgp summary vrf all")
         ipv4 = data["result"][0]["vrfs"]
         data = self.switch_command("show ipv6 bgp summary")
         ipv6 = data["result"][0]["vrfs"]
