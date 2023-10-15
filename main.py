@@ -11,13 +11,29 @@ from handler import metricHandler
 from wsgiref import simple_server
 
 
+class IPv6WSGIServer(simple_server.WSGIServer):
+    address_family = socket.AF_INET6
+
+
 def falcon_app(config, logger, port=9200, addr="0.0.0.0"):
+    # Determine address type (IPv4 or IPv6)
+    try:
+        socket.inet_pton(socket.AF_INET, addr)
+        server_class = simple_server.WSGIServer
+    except OSError:
+        try:
+            socket.inet_pton(socket.AF_INET6, addr)
+            server_class = IPv6WSGIServer
+        except OSError:
+            logger.error(f"Invalid address: {addr}")
+            return 1
+    
     logger.info(f"Starting Arista eAPI exporter on Port {addr}:{port}")
     api = falcon.App()
     api.add_route("/arista", metricHandler(config=config))
-
+    
     try:
-        httpd = simple_server.make_server(addr, port, api)
+        httpd = simple_server.make_server(addr, port, api, server_class=server_class)
     except Exception as e:
         logger.error(f"Couldn't start Server: {e}")
         return 1
@@ -30,7 +46,7 @@ def falcon_app(config, logger, port=9200, addr="0.0.0.0"):
 
 
 def main():
-    # command line options
+    # Command line options
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-c",
@@ -42,18 +58,19 @@ def main():
     )
     args = parser.parse_args()
 
-    # get the config
+    # Get the config
     try:
         with open(args.config, "r") as stream:
             config = yaml.safe_load(stream)
     except FileNotFoundError:
         logging.error(f"File not found: {args.config}")
         return 1
+
     if "listen_addr" not in config:
         config["listen_addr"] = "0.0.0.0"
-
     if "disable_certificate_validation" not in config:
         config["disable_certificate_validation"] = False
+
     if config["disable_certificate_validation"] is not True:
         logging.error(
             (
@@ -66,7 +83,7 @@ def main():
         )
         return 1
 
-    # enable logging
+    # Enable logging
     logger = logging.getLogger()
     if config["loglevel"]:
         logger.setLevel(logging.getLevelName(config["loglevel"].upper()))
