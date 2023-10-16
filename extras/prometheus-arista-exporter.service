@@ -7,7 +7,9 @@ User=prometheus
 Restart=on-failure
 
 WorkingDirectory=/etc/arista-eos-exporter/
-ExecStart=/usr/bin/python3 /etc/arista-eos-exporter/main.py
+ExecStart=/etc/arista-eos-exporter/.venv/bin/python3 /etc/arista-eos-exporter/main.py
 
 [Install]
 WantedBy=multi-user.target
+
+
