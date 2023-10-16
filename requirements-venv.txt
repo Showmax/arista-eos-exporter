@@ -4,3 +4,4 @@ falcon >=3
 PyYAML
 argparse
 pyeapi
+gunicorn
