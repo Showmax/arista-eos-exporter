@@ -5,99 +5,67 @@ import logging
 import socket
 import sys
 import yaml
-
 import falcon
-from handler import metricHandler
+from handler import MetricHandler
 from wsgiref import simple_server
-
 
 class IPv6WSGIServer(simple_server.WSGIServer):
     address_family = socket.AF_INET6
 
-
-def falcon_app(config, logger, port=9200, addr="0.0.0.0"):
-    # Determine address type (IPv4 or IPv6)
+def determine_server_class(addr, logger):
     try:
         socket.inet_pton(socket.AF_INET, addr)
-        server_class = simple_server.WSGIServer
+        return simple_server.WSGIServer
     except OSError:
         try:
             socket.inet_pton(socket.AF_INET6, addr)
-            server_class = IPv6WSGIServer
+            return IPv6WSGIServer
         except OSError:
             logger.error(f"Invalid address: {addr}")
-            return 1
-    
-    logger.info(f"Starting Arista eAPI exporter on Port {addr}:{port}")
-    api = falcon.App()
-    api.add_route("/arista", metricHandler(config=config))
-    
-    try:
-        httpd = simple_server.make_server(addr, port, api, server_class=server_class)
-    except Exception as e:
-        logger.error(f"Couldn't start Server: {e}")
-        return 1
+            sys.exit(1)
 
+def setup_logging(config):
+    logger = logging.getLogger()
+    log_level = config.get("loglevel", "INFO").upper()
+    logger.setLevel(log_level)
+    format = "%(asctime)-15s %(process)d %(levelname)s %(filename)s:%(lineno)d %(message)s"
+    logging.basicConfig(stream=sys.stdout, format=format)
+    return logger
+
+def load_config(filename):
     try:
+        with open(filename, 'r') as stream:
+            config = yaml.safe_load(stream)
+        if "listen_addr" not in config:
+            config["listen_addr"] = "0.0.0.0"
+        if config.get("disable_certificate_validation", False) != True:
+            raise ValueError(
+                "Certificate validation is not supported by pyeapi library. Please specify disable_certificate_validation: true in your configuration file. Upstream issue: https://github.com/arista-eosplus/pyeapi/issues/174"
+            )
+        return config
+    except Exception as e:
+        logging.error(f"Failed to load configuration: {e}")
+        sys.exit(1)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config", help="Specify config yaml file", metavar="FILE", default="config.yml")
+    args = parser.parse_args()
+
+    config = load_config(args.config)
+    logger = setup_logging(config)
+    server_class = determine_server_class(config["listen_addr"], logger)
+
+    api = falcon.App()
+    api.add_route("/arista", MetricHandler(config=config))
+    try:
+        httpd = simple_server.make_server(config["listen_addr"], config["listen_port"], api, server_class=server_class)
         httpd.serve_forever()
     except KeyboardInterrupt:
         httpd.server_close()
         logger.info("Stopping Arista eAPI Prometheus Server")
-
-
-def main():
-    # Command line options
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-c",
-        "--config",
-        help="Specify config yaml file",
-        metavar="FILE",
-        required=False,
-        default="config.yml",
-    )
-    args = parser.parse_args()
-
-    # Get the config
-    try:
-        with open(args.config, "r") as stream:
-            config = yaml.safe_load(stream)
-    except FileNotFoundError:
-        logging.error(f"File not found: {args.config}")
-        return 1
-
-    if "listen_addr" not in config:
-        config["listen_addr"] = "0.0.0.0"
-    if "disable_certificate_validation" not in config:
-        config["disable_certificate_validation"] = False
-
-    if config["disable_certificate_validation"] is not True:
-        logging.error(
-            (
-                "Certificate validation is not supported by pyeapi"
-                "library. Please specify "
-                "disable_certificate_validation: true in your "
-                "configuration file. Upstream issue: "
-                "https://github.com/arista-eosplus/pyeapi/issues/174"
-            )
-        )
-        return 1
-
-    # Enable logging
-    logger = logging.getLogger()
-    if config["loglevel"]:
-        logger.setLevel(logging.getLevelName(config["loglevel"].upper()))
-    else:
-        logger.setLevel("INFO")
-
-    format = (
-        "%(asctime)-15s %(process)d %(levelname)s "
-        "%(filename)s:%(lineno)d %(message)s"
-    )
-    logging.basicConfig(stream=sys.stdout, format=format)
-
-    falcon_app(config, logger, port=config["listen_port"], addr=config["listen_addr"])
-
+    except Exception as e:
+        logger.error(f"Error: {e}")
 
 if __name__ == "__main__":
     main()

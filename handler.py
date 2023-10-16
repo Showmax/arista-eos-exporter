@@ -1,61 +1,44 @@
+#!/usr/bin/env python3
+
 import logging
 import re
 import socket
-
 import falcon
-
 from collector import AristaMetricsCollector
+from prometheus_client.exposition import CONTENT_TYPE_LATEST, generate_latest
 
-from prometheus_client.exposition import CONTENT_TYPE_LATEST
-from prometheus_client.exposition import generate_latest
-
-
-class metricHandler:
+class MetricHandler:
     def __init__(self, config):
         self._config = config
-        self._target = None
 
-    def handle_modules(self, modules):
-        if not modules:
-            return False
-        module_functions = []
-        modules = modules.split(",")
-        for module in modules:
-            if module == "all":
-                return False
-            elif module == "memory":
-                module.functions
+    def validate_modules(self, modules):
+        if not modules or re.match(r"^([a-zA-Z]+)(,[a-zA-Z]+)*$", modules):
+            return True
+        logging.error("Invalid modules specified")
+        return False
 
     def on_get(self, req, resp):
-        self._target = req.get_param("target")
+        target = req.get_param("target")
         modules = req.get_param("modules")
-        if modules:
-            if re.match(r"^([a-zA-Z]+)(,[a-zA-Z]+)*$", modules):
-                self._config["module_names"] = modules
-            else:
-                msg = "Invalid modules specified"
-                logging.error(msg)
-                resp.status = falcon.HTTP_400
-                resp.body = msg
-                return
+ 
+        if modules and not self.validate_modules(modules):
+            resp.status = falcon.HTTP_400
+            resp.body = "Invalid modules specified"
+            return
 
         resp.set_header("Content-Type", CONTENT_TYPE_LATEST)
-        if not self._target:
-            msg = "No target parameter provided!"
-            logging.error(msg)
+
+        if not target:
             resp.status = falcon.HTTP_400
-            resp.body = msg
+            resp.body = "No target parameter provided!"
+            return
 
         try:
-            socket.getaddrinfo(self._target, None)
+            socket.getaddrinfo(target, None)
         except socket.gaierror as e:
-            msg = f"Target does not exist in DNS: {e}"
-            logging.error(msg)
             resp.status = falcon.HTTP_400
-            resp.body = msg
+            resp.body = f"Target does not exist in DNS: {e}"
+            return
 
-        else:
-            registry = AristaMetricsCollector(self._config, target=self._target)
-
-            collected_metric = generate_latest(registry)
-            resp.body = collected_metric
+        registry = AristaMetricsCollector(self._config, target=target)
+        resp.body = generate_latest(registry)
