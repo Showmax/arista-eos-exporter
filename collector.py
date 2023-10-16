@@ -1,31 +1,22 @@
-from prometheus_client.core import GaugeMetricFamily, InfoMetricFamily
 
+
+from prometheus_client.core import GaugeMetricFamily, InfoMetricFamily
 import logging
 import os
 import time
-
 import pyeapi
-import ssl
 
 PORT_STATS_NAMES = [
-    "inBroadcastPkts",
-    "inDiscards",
-    "inMulticastPkts",
-    "inOctets",
-    "inUcastPkts",
-    "outBroadcastPkts",
-    "outDiscards",
-    "outMulticastPkts",
-    "outOctets",
-    "outUcastPkts",
+    "inBroadcastPkts", "inDiscards", "inMulticastPkts", "inOctets",
+    "inUcastPkts", "outBroadcastPkts", "outDiscards", "outMulticastPkts",
+    "outOctets", "outUcastPkts"
 ]
-
 
 class AristaMetricsCollector(object):
     def __init__(self, config, target):
         self._username = os.getenv("ARISTA_USERNAME", config["username"])
         self._password = os.getenv("ARISTA_PASSWORD", config["password"])
-        self._protocol = config["protocol"] or "https"
+        self._protocol = config.get("protocol", "https")
         self._timeout = config["timeout"]
         self._target = target
         self._labels = {}
@@ -35,13 +26,9 @@ class AristaMetricsCollector(object):
         self._memfree = 0
         self._connection = False
         self._interfaces = False
-        self._module_names = False
-        if "module_names" in config:
-            self._module_names = config["module_names"]
-        self._scrape_durations = GaugeMetricFamily(
-            "arista_scrape_duration_seconds",
-            "Duration of a collector scrape.",
-        )
+        self._module_names = config.get("module_names")
+        self._scrape_durations = GaugeMetricFamily("arista_scrape_duration_seconds", "Duration of a collector scrape.")
+
 
     def add_scrape_duration(self, module_name, duration):
         self._scrape_durations.add_sample(
@@ -126,38 +113,39 @@ class AristaMetricsCollector(object):
         # Get the tcam usage data
         switch_tcam = self.switch_command("show hardware capacity")
 
-        if switch_tcam:
-            used_metrics = GaugeMetricFamily("arista_tcam_used", "TCAM Usage Data")
-            total_metrics = GaugeMetricFamily("arista_tcam_total", "TCAM Capacity")
-            for entry in switch_tcam["result"][0]["tables"]:
-                try:
-                    labels = {
-                        "table": entry["table"],
-                        "chip": entry["chip"],
-                        "feature": entry["feature"],
-                    }
-                    logging.debug(
-                        (
-                            f'Adding: table={entry["table"]} '
-                            f'value={entry["used"]} '
-                            f"labels={labels}"
-                        )
-                    )
-                    used_metrics.add_sample(
-                        "arista_tcam_used", value=entry["used"], labels=labels
-                    )
-                    total_metrics.add_sample(
-                        "arista_tcam_total", value=entry["maxLimit"], labels=labels
-                    )
-                except KeyError:
-                    logging.error("KeyError in switch_tcam entries")
-                    continue
+        if not switch_tcam or "result" not in switch_tcam or len(switch_tcam["result"]) == 0:
+            return
 
-            yield total_metrics
-            yield used_metrics
+        used_metrics = GaugeMetricFamily("arista_tcam_used", "TCAM Usage Data", labels=["table", "chip", "feature"])
+        total_metrics = GaugeMetricFamily("arista_tcam_total", "TCAM Capacity", labels=["table", "chip", "feature"])
+
+        for entry in switch_tcam["result"][0].get("tables", []):
+            try:
+                table = entry["table"]
+                chip = entry["chip"]
+                feature = entry["feature"]
+                used = entry["used"]
+                max_limit = entry["maxLimit"]
+                
+                labels = {"table": table, "chip": chip, "feature": feature}
+                logging.debug(f'Adding table={table} value={used} labels={labels}')
+                
+                used_metrics.add_sample("arista_tcam_used", value=used, labels=labels)
+                total_metrics.add_sample("arista_tcam_total", value=max_limit, labels=labels)
+            except KeyError:
+                logging.error("KeyError in switch_tcam entries")
+                continue
+
+        yield total_metrics
+        yield used_metrics
 
     def collect_port(self):
         port_interfaces = self.switch_command("show interfaces")
+        if not port_interfaces or "result" not in port_interfaces or len(port_interfaces["result"]) == 0:
+            return
+
+        self._interfaces = port_interfaces["result"][0].get("interfaces", {})
+        
         port_stats = {
             k: GaugeMetricFamily(
                 f"arista_port_{k}",
@@ -166,207 +154,143 @@ class AristaMetricsCollector(object):
             )
             for k in PORT_STATS_NAMES
         }
+        
         port_admin_up = GaugeMetricFamily(
-            "arista_admin_up",
-            "Value 1 if port is not shutdown",
-            labels=["device", "description"],
+            "arista_admin_up", "Value 1 if port is not shutdown", labels=["device", "description"]
         )
+        
         port_l2_up = GaugeMetricFamily(
-            "arista_l2_up",
-            "Value 1 if port is connected",
-            labels=["device", "description"],
+            "arista_l2_up", "Value 1 if port is connected", labels=["device", "description"]
         )
+        
         port_bandwidth = GaugeMetricFamily(
-            "arista_port_bandwidth",
-            "Bandwidth in bits/s",
-            labels=["device", "description"],
+            "arista_port_bandwidth", "Bandwidth in bits/s", labels=["device", "description"]
         )
 
-        if port_interfaces:
-            self._interfaces = port_interfaces["result"][0]["interfaces"]
-            for interface in self._interfaces:
-                try:
-                    iface = self._interfaces[interface]
-                    data = iface["interfaceCounters"]
-                except KeyError:
-                    logging.debug(
-                        (
-                            f"Interface {interface} on {self._target}"
-                            " does not have interfaceCounters,"
-                            " skipping"
-                        )
-                    )
-                    continue
-                if iface["interfaceStatus"] == "disabled":
-                    port_admin_up.add_metric(
-                        labels=[iface["name"], iface["description"]], value=0
-                    )
-                else:
-                    port_admin_up.add_metric(
-                        labels=[iface["name"], iface["description"]], value=1
-                    )
-                if iface["lineProtocolStatus"] == "up":
-                    port_l2_up.add_metric(
-                        labels=[iface["name"], iface["description"]], value=1
-                    )
-                else:
-                    port_l2_up.add_metric(
-                        labels=[iface["name"], iface["description"]], value=0
-                    )
-                port_bandwidth.add_metric(
-                    labels=[iface["name"], iface["description"]],
-                    value=int(iface["bandwidth"]),
-                )
-                for port_stat in PORT_STATS_NAMES:
-                    metric = [
-                        interface,
-                        iface["description"],
-                        iface["physicalAddress"],
-                        str(iface["mtu"]),
-                    ]
-                    port_stats[port_stat].add_metric(metric, float(data[port_stat]))
-            yield from port_stats.values()
-            yield port_admin_up
-            yield port_l2_up
-            yield port_bandwidth
+        for interface, iface in self._interfaces.items():
+            data = iface.get("interfaceCounters")
+            if not data:
+                logging.debug(f"Interface {interface} on {self._target} does not have interfaceCounters, skipping")
+                continue
 
-    def collect_sfp(self):
-        sfp = self.switch_command("show interfaces transceiver detail")
+            labels = [iface["name"], iface["description"]]
+
+            port_admin_up_value = 1 if iface.get("interfaceStatus") != "disabled" else 0
+            port_l2_up_value = 1 if iface.get("lineProtocolStatus") == "up" else 0
+
+            port_admin_up.add_metric(labels=labels, value=port_admin_up_value)
+            port_l2_up.add_metric(labels=labels, value=port_l2_up_value)
+            port_bandwidth.add_metric(labels=labels, value=int(iface.get("bandwidth", 0)))
+
+            metric_labels = labels + [iface["physicalAddress"], str(iface["mtu"])]
+            for port_stat in PORT_STATS_NAMES:
+                port_stats[port_stat].add_metric(metric_labels, float(data.get(port_stat, 0)))
+
+        yield from port_stats.values()
+        yield port_admin_up
+        yield port_l2_up
+        yield port_bandwidth
+
+    def collect_transceiver(self):
+        transceiver_data = self.switch_command("show interfaces transceiver detail")
         sensor_entries = ["rxPower", "txBias", "txPower", "voltage"]
 
-        if sfp:
-            sfp_labels = [
-                "device",
-                "sensor",
-                "mediaType",
-                "serial",
-                "description",
-                "lane",
-            ]
-            sfp_stats_metrics = GaugeMetricFamily(
-                "arista_sfp_stats", "SFP Statistics", labels=sfp_labels
-            )
-            alarm_labels = ["device", "lane", "sensor", "alarmType"]
-            sfp_alarms = GaugeMetricFamily(
-                "arista_sfp_alarms", "SFP Alarms", labels=alarm_labels
-            )
-            for iface, data in sfp["result"][0]["interfaces"].items():
-                interface = iface
-                lane = iface
-                if not data:
-                    logging.debug(f"Port does not have SFP: {interface}")
-                    continue
-                description = ""
-                # Lane detection. Lane is an optical transmitter that is
-                # a part of an interface. For example, 100G interface
-                # is usually comprised of four 25G lanes or ten 10G lanes.
-                if iface not in self._interfaces:
-                    logging.debug(
-                        (
-                            f"Port {interface} not found in interfaces"
-                            ". Looking for a lane"
-                        )
-                    )
-                    try_iface = "/".join(interface.split("/")[0:-1]) + "/1"
-                    sfps = sfp["result"][0]["interfaces"]
-                    if sfps[iface]["vendorSn"] == sfps[try_iface]["vendorSn"]:
-                        lane = iface
-                        interface = try_iface
-                        logging.debug(
-                            (f"Setting lane {lane} as " "part of {interface}")
-                        )
-                try:
-                    description = self._interfaces[interface]["description"]
-                except KeyError:
-                    pass
-                for sensor in sensor_entries:
-                    labels = [
-                        interface,
-                        sensor,
-                        data["mediaType"],
-                        data["vendorSn"],
-                        description,
-                        lane,
-                    ]
-                    logging.debug(
-                        (
-                            f"Adding: interface={interface} "
-                            f"sensor={sensor} value={data[sensor]} "
-                            f"labels={labels}"
-                        )
-                    )
-                    sfp_stats_metrics.add_metric(
-                        value=float(data[sensor]), labels=labels
-                    )
-                    # check thresholds and generate alerts
-                    thresholds = data["details"][sensor]
-                    labels = [interface, lane, sensor]
-                    if data[sensor] > thresholds["highAlarm"]:
-                        labels.append("highAlarm")
-                        sfp_alarms.add_metric(labels=labels, value=data[sensor])
-                    elif data[sensor] > thresholds["highWarn"]:
-                        labels.append("highWarn")
-                        sfp_alarms.add_metric(labels=labels, value=data[sensor])
-                    elif data[sensor] < thresholds["lowAlarm"]:
-                        labels.append("lowAlarm")
-                        sfp_alarms.add_metric(labels=labels, value=data[sensor])
-                    elif data[sensor] < thresholds["lowWarn"]:
-                        labels.append("lowWarn")
-                        sfp_alarms.add_metric(labels=labels, value=data[sensor])
+        if not transceiver_data:
+            return
 
-            yield sfp_stats_metrics
-            yield sfp_alarms
+        transceiver_interfaces = transceiver_data["result"][0].get("interfaces", {})
+
+        transceiver_labels = [
+            "device", "sensor", "mediaType", "serial", "description", "lane"
+        ]
+        transceiver_stats_metrics = GaugeMetricFamily(
+            "arista_transceiver_stats", "transceiver Statistics", labels=transceiver_labels
+        )
+
+        alarm_labels = ["device", "lane", "sensor", "alarmType"]
+        transceiver_alarms = GaugeMetricFamily(
+            "arista_transceiver_alarms", "transceiver Alarms", labels=alarm_labels
+        )
+
+        for iface, data in transceiver_interfaces.items():
+            if not data:
+                logging.debug(f"Port does not have transceiver: {iface}")
+                continue
+
+            lane = iface
+            description = self._interfaces.get(iface, {}).get("description", "")
+
+            # Lane detection.
+            if iface not in self._interfaces:
+                try_iface = "/".join(iface.split("/")[0:-1]) + "/1"
+                if transceiver_interfaces.get(iface, {}).get("vendorSn") == transceiver_interfaces.get(try_iface, {}).get("vendorSn"):
+                    lane = iface
+                    iface = try_iface
+                    logging.debug(f"Setting lane {lane} as part of {iface}")
+
+            for sensor in sensor_entries:
+                labels = [
+                    iface, sensor, data["mediaType"], data["vendorSn"], description, lane
+                ]
+                logging.debug(
+                    f"Adding: interface={iface} sensor={sensor} value={data[sensor]} labels={labels}"
+                )
+                transceiver_stats_metrics.add_metric(value=float(data[sensor]), labels=labels)
+
+                # Check thresholds and generate alerts
+                thresholds = data["details"].get(sensor, {})
+                alert_labels = [iface, lane, sensor]
+
+                for alert_type, boundary in [
+                    ("highAlarm", "highAlarm"),
+                    ("highWarn", "highWarn"),
+                    ("lowAlarm", "lowAlarm"),
+                    ("lowWarn", "lowWarn"),
+                ]:
+                    if alert_type in thresholds and data[sensor] > thresholds[alert_type]:
+                        transceiver_alarms.add_metric(labels=alert_labels + [boundary], value=data[sensor])
+
+        yield transceiver_stats_metrics
+        yield transceiver_alarms
 
     def collect_bgp(self):
-        data = self.switch_command("show ip bgp summary")
-        ipv4 = data["result"][0]["vrfs"]
-        data = self.switch_command("show ipv6 bgp summary")
-        ipv6 = data["result"][0]["vrfs"]
+        ipv4_data = self.switch_command("show ip bgp summary")["result"][0]["vrfs"]
+        ipv6_data = self.switch_command("show ipv6 bgp summary")["result"][0]["vrfs"]
 
-        labels = ["vrf", "peer", "asn"]
         prefixes = GaugeMetricFamily(
-            "arista_bgp_accepted_prefixes", "Number of prefixes accepted", labels=labels
+            "arista_bgp_accepted_prefixes", "Number of prefixes accepted", labels=["vrf", "peer", "asn"]
         )
         peer_state = InfoMetricFamily(
-            "arista_bgp_peer_state",
-            "State of the BGP peer",
-            labels=labels + ["state", "router_id"],
+            "arista_bgp_peer_state", "State of the BGP peer", labels=["vrf", "peer", "asn", "state", "router_id"]
         )
 
-        for vrf, vrf_data in ipv4.items():
-            if "peers" not in vrf_data:
-                continue
-            router_id = vrf_data["routerId"]
-            for peer, peer_data in vrf_data["peers"].items():
-                labels = {
-                    "vrf": vrf,
-                    "router_id": router_id,
-                    "peer": peer,
-                    "asn": str(peer_data["asn"]),
-                    "state": peer_data["peerState"],
-                }
-                peer_state.add_metric(value=labels, labels=labels)
-                labels = [vrf, peer, str(peer_data["asn"])]
-                prefixes.add_metric(value=peer_data["prefixReceived"], labels=labels)
-        for vrf, vrf_data in ipv6.items():
-            if "peers" not in vrf_data:
-                continue
-            router_id = vrf_data["routerId"]
-            for peer, peer_data in vrf_data["peers"].items():
-                labels = {
-                    "vrf": vrf,
-                    "router_id": router_id,
-                    "peer": peer,
-                    "asn": str(peer_data["asn"]),
-                    "state": peer_data["peerState"],
-                }
-                peer_state.add_metric(value=labels, labels=labels)
-                labels = [vrf, peer, str(peer_data["asn"])]
-                prefixes.add_metric(value=peer_data["prefixReceived"], labels=labels)
+        def process_bgp_data(bgp_data):
+            for vrf, vrf_data in bgp_data.items():
+                peers = vrf_data.get("peers", {})
+                router_id = vrf_data["routerId"]
+                
+                for peer, peer_data in peers.items():
+                    labels_info = {
+                        "vrf": vrf,
+                        "router_id": router_id,
+                        "peer": peer,
+                        "asn": str(peer_data["asn"]),
+                        "state": peer_data["peerState"],
+                    }
+                    peer_state.add_metric(value=labels_info, labels=labels_info)
+                    labels_gauge = [vrf, peer, str(peer_data["asn"])]
+                    prefixes.add_metric(value=peer_data["prefixReceived"], labels=labels_gauge)
+
+        process_bgp_data(ipv4_data)
+        process_bgp_data(ipv6_data)
+
         yield peer_state
         yield prefixes
 
     def collect_power(self):
+        measurements = ["inputCurrent", "inputVoltage", "outputCurrent", "outputPower"]
+        data = self.switch_command("show environment power")
+
         psu_info = InfoMetricFamily(
             "arista_power_supply",
             "State of the power supply",
@@ -388,41 +312,46 @@ class AristaMetricsCollector(object):
             labels=["id", "status", "sensor"],
         )
 
-        measurements = ["inputCurrent", "inputVoltage", "outputCurrent", "outputPower"]
-        data = self.switch_command("show environment power")
-        for psu_id, psu in data["result"][0]["powerSupplies"].items():
-            labels = {
-                "state": psu["state"],
-                "model": psu["modelName"],
-                "capacity_watts": str(psu["capacity"]),
-                "id": str(psu_id),
-            }
-            psu_info.add_metric(value=labels, labels=labels)
-            for measurement in measurements:
-                psu_power.add_metric(
-                    value=psu[measurement], labels=[psu_id, measurement]
-                )
-            for name, sensor_data in psu["tempSensors"].items():
-                psu_temp.add_metric(
-                    value=sensor_data["temperature"],
-                    labels=[psu_id, sensor_data["status"], name],
-                )
-            for name, fan_data in psu["fans"].items():
-                psu_fan.add_metric(
-                    value=fan_data["speed"], labels=[psu_id, fan_data["status"], name]
-                )
+        if "result" in data and data["result"]:
+            for psu_id, psu in data["result"][0].get("powerSupplies", {}).items():
+                labels = {
+                    "state": psu.get("state", ""),
+                    "model": psu.get("modelName", ""),
+                    "capacity_watts": str(psu.get("capacity", "")),
+                    "id": str(psu_id),
+                }
+
+                psu_info.add_metric(value=labels, labels=labels)
+
+                for measurement in measurements:
+                    psu_power.add_metric(
+                        value=psu.get(measurement, 0), labels=[psu_id, measurement]
+                    )
+
+                for name, sensor_data in psu.get("tempSensors", {}).items():
+                    psu_temp.add_metric(
+                        value=sensor_data.get("temperature", 0),
+                        labels=[psu_id, sensor_data.get("status", ""), name],
+                    )
+
+                for name, fan_data in psu.get("fans", {}).items():
+                    psu_fan.add_metric(
+                        value=fan_data.get("speed", 0),
+                        labels=[psu_id, fan_data.get("status", ""), name],
+                    )
 
         yield psu_info
         yield psu_power
         yield psu_temp
         yield psu_fan
 
+
     def get_all_modules(self):
         return {
             "memory": self.collect_memory,
             "tcam": self.collect_tcam,
             "port": self.collect_port,
-            "sfp": self.collect_sfp,
+            "transceiver": self.collect_transceiver,
             "bgp": self.collect_bgp,
             "power": self.collect_power,
         }
@@ -431,15 +360,17 @@ class AristaMetricsCollector(object):
         all_modules = self.get_all_modules()
         if not self._module_names:
             return all_modules
-        module_functions = {}
+        
         modules = self._module_names.split(",")
-        for module in modules:
-            if module == "all":
-                return all_modules
-            elif module in all_modules:
-                module_functions[module] = all_modules[module]
-            else:
-                logging.warning(f"Unknown module requested:{module}. Ignoring")
+        module_functions = {module: all_modules[module] for module in modules if module in all_modules or module == "all"}
+        
+        if "all" in module_functions:
+            return all_modules
+
+        missing_modules = set(modules) - set(module_functions.keys())
+        for module in missing_modules:
+            logging.warning(f"Unknown module requested: {module}. Ignoring")
+
         return module_functions
 
     def collect(self):
