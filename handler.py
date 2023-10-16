@@ -23,22 +23,22 @@ class MetricHandler:
  
         if modules and not self.validate_modules(modules):
             resp.status = falcon.HTTP_400
-            resp.body = "Invalid modules specified"
+            resp.text = "Invalid modules specified"
             return
 
         resp.set_header("Content-Type", CONTENT_TYPE_LATEST)
 
         if not target:
             resp.status = falcon.HTTP_400
-            resp.body = "No target parameter provided!"
+            resp.text = "No target parameter provided!"
             return
 
         try:
             socket.getaddrinfo(target, None)
         except socket.gaierror as e:
             resp.status = falcon.HTTP_400
-            resp.body = f"Target does not exist in DNS: {e}"
+            resp.text = f"Target does not exist in DNS: {e}"
             return
 
         registry = AristaMetricsCollector(self._config, target=target)
-        resp.body = generate_latest(registry)
+        resp.text = generate_latest(registry)
